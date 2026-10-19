@@ -1,0 +1,4 @@
+# Static site at the repo root plus three functions for live scores and sportsbook lines.
+[build]
+  publish = "."
+  functions = "netlify/functions"

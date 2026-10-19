@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GridIron Edge CFB</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>GridIron Edge <span class="sub-brand">CFB</span></h1>
+    <p class="tagline">College football picks from a model that learns week to week, priced against every sportsbook it can find</p>
+    <nav class="site-nav" aria-label="Pages">
+      <a href="index.html" aria-current="page">Game picks</a>
+      <a href="bets.html">My bets</a>
+    </nav>
+    <nav class="nav" aria-label="On this page">
+      <a href="#picks-h">Picks</a>
+      <a href="#games-h">Line shopping</a>
+      <a href="#record-h">Track record</a>
+      <a href="#power-h">Rankings</a>
+      <a href="#how-h" class="key-link">How it works</a>
+    </nav>
+  </header>
+
+  <main class="wrap" hidden>
+    <p id="status" class="status" role="status">Loading college football games, scores, and lines…</p>
+    <div id="sources" class="sources"></div>
+
+    <section class="controls" aria-label="Pick settings">
+      <label>
+        <span>Minimum edge (expected value): <strong id="edge-out">3%</strong></span>
+        <input id="edge" type="range" min="0" max="12" step="1" value="3">
+      </label>
+      <fieldset class="markets">
+        <legend>Markets</legend>
+        <label><input type="checkbox" value="ATS" checked> Spread</label>
+        <label><input type="checkbox" value="TOT" checked> Over/Under</label>
+        <label><input type="checkbox" value="ML"> Moneyline</label>
+      </fieldset>
+      <label>
+        <span>Bankroll ($)</span>
+        <input id="bankroll" type="number" min="0" step="50" value="500">
+      </label>
+      <label>
+        <span>Find a team</span>
+        <input id="search" type="search" placeholder="e.g. Alabama or SEC team">
+      </label>
+      <p class="explain wide">These settings control which bets are recommended. A higher <strong>minimum edge</strong> gives fewer, stronger picks. <strong>Markets</strong> picks the bet types. <strong>Bankroll</strong> sizes each suggested stake (quarter-Kelly, capped at 3%).</p>
+      <p id="save-state" class="muted small save-state" role="status"></p>
+    </section>
+
+    <section class="card" aria-labelledby="picks-h">
+      <h2 id="picks-h">Recommended bets</h2>
+      <p class="explain">Bets where the model's chance of winning beats the price at the best sportsbook for that side. Each card names the book with the best line or odds and lists the others. <strong>Track</strong> records it as a bet you took, and <strong>+ Parlay</strong> adds it to the parlay slip.</p>
+      <p id="picks-sub" class="muted"></p>
+      <div id="picks" class="picks"></div>
+    </section>
+
+    <section class="card" aria-labelledby="games-h">
+      <div class="row-head">
+        <h2 id="games-h">Line shopping: every game</h2>
+        <label class="inline"><input id="ranked" type="checkbox"> Ranked teams only</label>
+      </div>
+      <p class="explain">Every upcoming FBS game with the best price at any book for each side, the model's view, and where DraftKings bettors' money is going. Open <strong>All books</strong> to see each sportsbook's line, the model's edge at that book, and Track or + Parlay buttons. Lines refresh automatically.</p>
+      <div id="games"></div>
+      <button id="games-more" type="button" class="link" hidden>Show more games</button>
+    </section>
+
+    <section class="card" aria-labelledby="record-h">
+      <div class="row-head">
+        <h2 id="record-h">Track record</h2>
+        <label class="inline">Season <select id="season"></select></label>
+      </div>
+      <p class="muted">Each week's picks were made using only games played before that week, at the consensus closing line (-110 for spreads and totals), then the model learned from the results. Same settings as above.</p>
+      <div id="tiles" class="tiles"></div>
+      <div id="chart" class="chart"></div>
+      <div class="scroll"><table id="weekly" class="table"></table></div>
+    </section>
+
+    <section class="card" aria-labelledby="power-h">
+      <h2 id="power-h">Power rankings</h2>
+      <p class="explain">The model's top 25 FBS teams by Elo rating, which moves after every game based on the result, the margin, and how strong the opponent was.</p>
+      <div class="scroll"><table id="power" class="table"></table></div>
+    </section>
+
+    <section class="card" aria-labelledby="how-h">
+      <h2 id="how-h">How it works</h2>
+      <ol class="how">
+        <li><strong>History.</strong> Every FBS game since 2014 with final scores and the consensus closing spread, total, and moneylines (the median across sportsbooks), from the open <a href="https://github.com/sportsdataverse/cfbfastR-data" target="_blank" rel="noopener">cfbfastR</a> data.</li>
+        <li><strong>This season.</strong> Schedules, live scores, and DraftKings lines come from ESPN, including DraftKings' closing line for every finished game. Finished weeks feed the model, so it keeps learning as the season goes.</li>
+        <li><strong>Team stats.</strong> Each team has an Elo rating (adjusted for margin of victory, home field, and FBS vs. FCS), rolling points scored and allowed, and how often they cover and go over. Recent games count most, and ratings regress toward average each offseason.</li>
+        <li><strong>Learning week to week.</strong> Three logistic-regression models (win, cover, over) predict each week using only earlier games, see the results, and update before the next week.</li>
+        <li><strong>Every sportsbook.</strong> The model's view becomes an expected margin and total, which prices each book's own line and odds, including half-point differences and pushes. A bet is recommended at the book where its expected value is highest, if that clears your minimum edge.</li>
+      </ol>
+      <h3>Where the lines come from</h3>
+      <ul class="how">
+        <li><strong>DraftKings</strong> through ESPN, with opening lines (refreshed every 2 minutes).</li>
+        <li><strong>DraftKings betting splits</strong>: the share of money and of bets on each side (every 5 minutes).</li>
+        <li><strong>Hard Rock Bet (including Florida), FanDuel, BetMGM, Caesars, ESPN BET, Fanatics, BetRivers, and Bovada</strong> through The Odds API, when an API key is set up. On the free plan they refresh about every 5 hours. A paid plan can refresh every few minutes.</li>
+      </ul>
+      <h3>How accurate is it?</h3>
+      <p id="accuracy" class="muted"></p>
+      <p class="disclaimer">For education and entertainment. Closing college football lines are efficient, and no model reliably beats them. Check the track record before trusting any pick. Never bet more than you can afford to lose. Need help? Call 1-800-GAMBLER.</p>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
+  <script src="model.js"></script>
+  <script src="track.js"></script>
+  <script src="app.js"></script>
+  <script src="auth.js"></script>
+</body>
+</html>
