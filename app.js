@@ -11,7 +11,7 @@ const BOOKS_REFRESH_MS = 15 * 60 * 1000;
 const GAMES_PAGE = 25;
 const BOOK_NAMES = {
   draftkings: "DraftKings", hardrockbet: "Hard Rock Bet", hardrockbet_fl: "Hard Rock Bet (FL)", fanduel: "FanDuel",
-  betmgm: "BetMGM", williamhill_us: "Caesars", espnbet: "ESPN BET", fanatics: "Fanatics", betrivers: "BetRivers",
+  betmgm: "BetMGM", williamhill_us: "Caesars", espnbet: "theScore Bet", fanatics: "Fanatics", betrivers: "BetRivers",
   bovada: "Bovada", consensus: "Consensus",
 };
 const bookName = k => BOOK_NAMES[k] || k;
@@ -105,8 +105,42 @@ async function loadSplits() {
   }
 }
 
+// One Odds API event's prices, by book, from the home team's point of view.
+function normalizeEvent(ev) {
+  const out = {};
+  for (const b of ev.bookmakers || []) {
+    const row = { title: b.title, updated: b.last_update };
+    for (const m of b.markets || []) {
+      const by = name => m.outcomes.find(o => o.name === name);
+      if (m.key === "h2h") {
+        row.homeML = by(ev.home_team)?.price ?? null;
+        row.awayML = by(ev.away_team)?.price ?? null;
+      } else if (m.key === "spreads") {
+        const h = by(ev.home_team), a = by(ev.away_team);
+        if (h && h.point != null) { row.homeSpread = h.point; row.homeSpreadOdds = h.price; row.awaySpreadOdds = a ? a.price : null; }
+      } else if (m.key === "totals") {
+        const o = by("Over"), u = by("Under");
+        if (o && o.point != null) { row.total = o.point; row.overOdds = o.price; row.underOdds = u ? u.price : null; }
+      }
+    }
+    out[b.key] = row;
+  }
+  return { id: ev.id, commence: ev.commence_time, home: ev.home_team, away: ev.away_team, books: out };
+}
+
+// Other sportsbooks: Supabase fetches them from The Odds API every 5 hours in season (the key
+// stays in Supabase Vault) and caches them in odds_cache. The Netlify books function is a fallback
+// for setups that put ODDS_API_KEY in Netlify instead.
 async function loadBooks() {
   try {
+    const sb = window.GridIronAuth && window.GridIronAuth.client;
+    const { data, error } = sb ? await sb.from("odds_cache").select("fetched_at, remaining, body").eq("id", 1).maybeSingle()
+      : { data: null, error: null };
+    if (!error && data && Array.isArray(data.body) && data.fetched_at) {
+      books = { status: "ok", source: "The Odds API", fetchedAt: data.fetched_at, refreshMinutes: 300,
+        remaining: data.remaining, events: data.body.map(normalizeEvent) };
+      return;
+    }
     const body = await getJson(`${FN}/books`);
     books = body.enabled ? { status: "ok", ...body } : { status: "off", reason: body.reason };
   } catch (err) {
@@ -410,7 +444,7 @@ function renderSources() {
     : `<li class="muted"><strong>DraftKings betting splits</strong> unavailable${splits.error ? ` (${T.esc(splits.error)})` : ""}</li>`);
   if (books.status === "ok") {
     const names = new Set(books.events.flatMap(e => Object.keys(e.books)));
-    parts.push(`<li><strong>${[...names].filter(k => k !== "draftkings").map(bookName).join(", ") || "No other books"}</strong> via The Odds API · ${books.events.length} games · updated ${time(books.fetchedAt)} (refreshes every ${books.refreshMinutes} min)</li>`);
+    parts.push(`<li><strong>${[...names].filter(k => k !== "draftkings").map(bookName).join(", ") || "No other books"}</strong> via The Odds API · ${books.events.length} games · updated ${time(books.fetchedAt)} (refreshes every ${books.refreshMinutes >= 60 ? `${Math.round(books.refreshMinutes / 60)} hours` : `${books.refreshMinutes} min`})</li>`);
   } else if (books.status === "off") {
     parts.push('<li class="muted"><strong>Hard Rock Bet, FanDuel, BetMGM, Caesars and more</strong> need a free The Odds API key (see README). Until then, lines come from DraftKings.</li>');
   } else if (books.status === "error") {
