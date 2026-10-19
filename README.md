@@ -15,14 +15,14 @@ College football betting picks from a model that learns week to week, priced aga
 | `data/history.json` | Every FBS game since 2014 with scores and the consensus (median) closing spread, total, and moneylines | Rebuilt each offseason | No |
 | ESPN (`netlify/functions/week.mjs`) | This season's schedule, live scores, DraftKings lines with openers, and DraftKings closing lines for finished games | 2 minutes (finished weeks: 1 day) | No |
 | DraftKings Network (`netlify/functions/splits.mjs`) | DraftKings odds plus % of money and % of bets on each side | 5 minutes | No |
-| The Odds API, fetched by Supabase | Hard Rock Bet, FanDuel, BetMGM, theScore Bet (formerly ESPN BET), BetRivers, Bovada, DraftKings (plus Hard Rock FL, Caesars, and Fanatics when they post college lines) | Every 5 hours, August to January | Set up (key in Supabase Vault) |
+| The Odds API, fetched by Supabase | Hard Rock Bet, FanDuel, BetMGM, theScore Bet (formerly ESPN BET), BetRivers, Bovada, DraftKings (plus Hard Rock FL, Caesars, and Fanatics when they post college lines) | Every 8 hours, Monday to Saturday, August to January | Set up (key in Supabase Vault) |
 
 Responses are cached in Netlify's shared ("durable") cache, so each source is called once per refresh window no matter how many people load the page. The page re-checks every 3 minutes.
 
 ## Setup
 
 1. **Netlify:** Add new site → Import an existing project → GitHub → `ISM4421CFBPicks`. Leave the build settings as they are (`netlify.toml` publishes the repo root and deploys the functions).
-2. **More sportsbooks: already set up.** The Odds API key is stored encrypted in Supabase Vault (secret `odds_api_key`), never in this repo. A `pg_cron` job (`refresh-cfb-odds`, `7 */5 * 1,8-12 *`) runs `public.refresh_cfb_odds()`, which fetches every book's lines and saves them in the `odds_cache` table. Signed-in visitors read that table. Each refresh uses 3 of the free plan's 500 monthly credits, about 450 a month. To refresh more often on a paid plan, change the job's schedule with `cron.alter_job`. As a fallback, `netlify/functions/books.mjs` can use an `ODDS_API_KEY` Netlify environment variable instead.
+2. **More sportsbooks: already set up.** The Odds API key is stored encrypted in Supabase Vault (secret `odds_api_key`), never in this repo. A `pg_cron` job (`refresh-cfb-odds`, `7 */8 * 1,8-12 1-6`) runs `public.refresh_odds('cfb')`, which fetches every book's lines and saves them in the `odds_cache` table. Signed-in visitors read that table. Each refresh uses 3 of the free plan's 500 monthly credits. The key is shared with the NFL site, and the two schedules together use about 415 a month. To refresh more often on a paid plan, change the job's schedule with `cron.alter_job`. As a fallback, `netlify/functions/books.mjs` can use an `ODDS_API_KEY` Netlify environment variable instead.
 3. **Accounts:** sign-in uses the same Supabase project as the NFL site (`config.js`), so the same email and password work on both. Bets are tagged `sport = 'cfb'` and stay separate. For sign-up confirmation and password-reset emails to come back to this site, add its Netlify URL under Supabase → Authentication → URL Configuration → Redirect URLs.
 
 ## The model

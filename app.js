@@ -137,7 +137,7 @@ async function loadBooks() {
     const { data, error } = sb ? await sb.from("odds_cache").select("fetched_at, remaining, body").eq("id", 1).maybeSingle()
       : { data: null, error: null };
     if (!error && data && Array.isArray(data.body) && data.fetched_at) {
-      books = { status: "ok", source: "The Odds API", fetchedAt: data.fetched_at, refreshMinutes: 300,
+      books = { status: "ok", source: "The Odds API", fetchedAt: data.fetched_at, refreshMinutes: 480,
         remaining: data.remaining, events: data.body.map(normalizeEvent) };
       return;
     }
