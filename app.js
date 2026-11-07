@@ -5,7 +5,7 @@ const pct = (x, d = 0) => `${(x * 100).toFixed(d)}%`;
 const signed = (x, d = 1) => (x > 0 ? "+" : "") + x.toFixed(d);
 const MARKET_NAMES = { ML: "Moneyline", ATS: "Spread", TOT: "Over/Under" };
 const MAX_STAKE = 0.03;
-const FN = "/.netlify/functions";
+const FN = window.CFBSeason.FN;
 const REFRESH_MS = 3 * 60 * 1000;
 const BOOKS_REFRESH_MS = 15 * 60 * 1000;
 const GAMES_PAGE = 25;
@@ -44,37 +44,9 @@ function kickoff(g) {
 const teamLabel = (t, rank) => `${rank ? `<span class="rank">#${rank}</span> ` : ""}${T.esc(t)}`;
 const weekLabel = g => (g.post ? (g.week - 100 === 1 ? "Bowls" : "Playoff") : `Week ${g.week}`);
 
-async function getJson(url) {
-  const res = await fetch(url);
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body.error || `${url} returned ${res.status}`);
-  return body;
-}
-
-async function mapLimit(items, n, fn) {
-  const out = new Array(items.length);
-  let i = 0;
-  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
-    while (i < items.length) { const k = i++; out[k] = await fn(items[k]); }
-  }));
-  return out;
-}
+const { getJson, mapLimit, weeksToLoad } = window.CFBSeason;
 
 // ---- Loading the season --------------------------------------------------------
-// Which ESPN weeks of this season to load: every finished week, this week, and next week.
-function weeksToLoad(cur) {
-  const reg = cur.calendar.find(c => c.type === 2), post = cur.calendar.find(c => c.type === 3);
-  const list = [];
-  const regWeeks = reg ? reg.weeks.map(w => w.week) : [];
-  if (cur.type === 2) {
-    for (const w of regWeeks) if (w <= cur.week + 1) list.push([2, w]);
-  } else if (cur.type === 3 || cur.type === 4) {
-    for (const w of regWeeks) list.push([2, w]);
-    if (post) for (const w of post.weeks) if (cur.type === 4 || w.week <= cur.week + 1) list.push([3, w.week]);
-  }
-  return list.filter(([t, w]) => !(t === cur.type && w === cur.week));
-}
-
 async function loadSeason() {
   current = await getJson(`${FN}/week`);
   seasonWeeks.set(`${current.type}|${current.week}`, current);

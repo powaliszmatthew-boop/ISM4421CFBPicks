@@ -1,11 +1,14 @@
 const T = window.GridIronTrack;
+const PM = window.PropsModel;
 const $ = sel => document.querySelector(sel);
 const pct = (x, d = 0) => `${(x * 100).toFixed(d)}%`;
 const money = x => `${x < 0 ? "−" : ""}$${Math.abs(x).toFixed(2)}`;
 const WEEK_URL = "/.netlify/functions/week";
+const STATS_URL = "/.netlify/functions/player-stats";
+const STATS_VERSION = 1;   // same as props.js
 const SPORT = window.GRIDIRON_CONFIG.sport;
 const RESULTS = { pending: "Pending", win: "Win", loss: "Loss", push: "Push", void: "Void" };
-const KIND = { game: "Game", parlay: "Parlay" };
+const KIND = { game: "Game", prop: "Prop", parlay: "Parlay" };
 const BADGE = { game: "ATS", prop: "PROP", parlay: "PARLAY" };
 
 let bets = [];
@@ -48,9 +51,10 @@ async function loadBets() {
 }
 
 // ---- Automatic settling -----------------------------------------------------
-// Game bets and parlay legs settle from ESPN's final scores.
-const canAutoGrade = b => b.result === "pending" && b.game_id && b.side && b.season && b.week &&
-  b.kind === "game" && b.market && (b.market === "ML" || b.line != null);
+// Game bets and parlay legs settle from ESPN's final scores; props from the player's box score line.
+const canAutoGrade = b => b.result === "pending" && b.game_id && b.side && b.season && b.week && (
+  (b.kind === "game" && b.market && (b.market === "ML" || b.line != null)) ||
+  (b.kind === "prop" && b.player_id && b.stat && PM.STATS[b.stat] && b.line != null));
 
 function gradeGame(b, g) {
   const margin = g.homeScore - g.awayScore;
@@ -63,26 +67,44 @@ function gradeGame(b, g) {
   return total === b.line ? "push" : (total > b.line) === (b.side === "over") ? "win" : "loss";
 }
 
-function grade(b, games) {
+// Returns "waiting" when the game is final but the player has no stat line yet.
+function grade(b, games, stats) {
   const g = games.get(b.game_id);
-  return g && g.played ? gradeGame(b, g) : null;
+  if (!g || !g.played) return null;
+  if (b.kind === "game") return gradeGame(b, g);
+  const s = stats.get(`${b.player_id}|${b.game_id}`);
+  if (!s) return "waiting";
+  const actual = PM.STATS[b.stat].f(s);
+  return actual === b.line ? "push" : (actual > b.line) === (b.side === "over") ? "win" : "loss";
 }
 
-// Final scores for the weeks these bets were on. Bowl and playoff weeks are stored as 100 + week.
+// Final scores (and, for props, box score lines) for the weeks these bets were on.
+// Bowl and playoff weeks are stored as 100 + week.
 async function loadGames(items) {
   const weeks = [...new Set(items.map(b => `${b.season}|${b.week}`))];
-  const games = new Map();
+  const propWeeks = new Set(items.filter(b => b.kind === "prop").map(b => `${b.season}|${b.week}`));
+  const games = new Map(), stats = new Map();
   await Promise.all(weeks.map(async key => {
     const [season, week] = key.split("|").map(Number);
-    const type = week > 100 ? 3 : 2;
-    const res = await fetch(`${WEEK_URL}?season=${season}&type=${type}&week=${week > 100 ? week - 100 : week}`);
-    if (!res.ok) return;
-    const body = await res.json();
-    for (const g of body.games) {
-      games.set(g.id, { played: g.completed && g.home.score != null, homeScore: g.home.score, awayScore: g.away.score });
+    const type = week > 100 ? 3 : 2, w = week > 100 ? week - 100 : week;
+    const res = await fetch(`${WEEK_URL}?season=${season}&type=${type}&week=${w}`);
+    if (res.ok) {
+      const body = await res.json();
+      for (const g of body.games) {
+        games.set(g.id, { played: g.completed && g.home.score != null, homeScore: g.home.score, awayScore: g.away.score });
+      }
+    }
+    if (!propWeeks.has(key)) return;
+    const sr = await fetch(`${STATS_URL}?season=${season}&type=${type}&week=${w}&v=${STATS_VERSION}`);
+    if (!sr.ok) return;
+    const body = await sr.json();
+    for (const r of body.rows) {
+      const s = {};
+      body.cols.forEach((c, i) => { s[c] = r[4 + i]; });
+      stats.set(`${r[0]}|${r[3]}`, s);
     }
   }));
-  return games;
+  return { games, stats };
 }
 
 async function setParlayFromLegs(b) {
@@ -101,11 +123,11 @@ async function autoSettle() {
   const legs = parlays.flatMap(b => b.legs.filter(canAutoGrade));
   const items = [...singles, ...legs];
   if (!items.length) return { settled: 0, waiting: 0 };
-  const games = await loadGames(items);
-  let settled = 0;
-  const waiting = 0;
+  const { games, stats } = await loadGames(items);
+  let settled = 0, waiting = 0;
   for (const b of singles) {
-    const result = grade(b, games);
+    const result = grade(b, games, stats);
+    if (result === "waiting") { waiting++; continue; }
     if (!result) continue;
     const { error } = await db().from("bets").update({ result, settled_at: new Date().toISOString() }).eq("id", b.id);
     if (!error) { b.result = result; settled++; }
@@ -113,7 +135,8 @@ async function autoSettle() {
   for (const p of parlays) {
     let changed = false;
     for (const l of p.legs.filter(canAutoGrade)) {
-      const result = grade(l, games);
+      const result = grade(l, games, stats);
+      if (result === "waiting") { waiting++; continue; }
       if (!result) continue;
       const { error } = await db().from("bet_legs").update({ result }).eq("id", l.id);
       if (!error) { l.result = result; changed = true; }
@@ -206,7 +229,7 @@ function renderList() {
         <td>${resultSelect(b.result, "data-result")}</td>
         <td class="${p > 0 ? "pos" : p < 0 ? "neg" : ""}">${b.result === "pending" ? "–" : money(p)}</td>
         <td><button type="button" class="link" data-del>Delete</button></td></tr>`;
-    }).join("") || `<tr><td colspan="9" class="muted">No bets yet. Add one above, or use Track on the picks pages.</td></tr>`}</tbody>`;
+    }).join("") || `<tr><td colspan="9" class="muted">No bets yet. Add one above, or use Track on the Game lines and Player props pages.</td></tr>`}</tbody>`;
 }
 
 function renderAll() {

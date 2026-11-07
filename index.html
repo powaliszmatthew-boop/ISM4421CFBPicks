@@ -3,27 +3,40 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GridIron Edge CFB</title>
+  <title>Game Lines · GridIron Edge CFB</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Crect x=%2730%27 y=%2730%27 width=%2740%27 height=%2740%27 rx=%275%27 transform=%27rotate(45 50 50)%27 fill=%27none%27 stroke=%27%230b5fd6%27 stroke-width=%2710%27/%3E%3C/svg%3E">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="topbar">
-    <h1>GridIron Edge <span class="sub-brand">CFB</span></h1>
-    <p class="tagline">College football picks from a model that learns week to week, priced against every sportsbook it can find</p>
-    <nav class="site-nav" aria-label="Pages">
-      <a href="index.html" aria-current="page">Game picks</a>
-      <a href="bets.html">My bets</a>
-    </nav>
-    <nav class="nav" aria-label="On this page">
-      <a href="#picks-h">Picks</a>
-      <a href="#games-h">Line shopping</a>
-      <a href="#record-h">Track record</a>
-      <a href="#power-h">Rankings</a>
-      <a href="#how-h" class="key-link">How it works</a>
-    </nav>
+    <div class="gnav">
+      <a class="brand" href="index.html"><span class="brand-mark"></span><span class="brand-name">GridIron Edge</span><span class="brand-sub">CFB</span></a>
+      <nav class="site-nav" aria-label="Pages">
+        <a href="index.html" aria-current="page">Game lines</a>
+        <a href="props.html">Player props</a>
+        <a href="bets.html">My bets</a>
+      </nav>
+    </div>
   </header>
+  <div class="lnav">
+    <div class="lnav-in">
+      <div class="lnav-title">Game Lines</div>
+      <nav class="nav" aria-label="On this page">
+          <a href="#picks-h">Picks</a>
+          <a href="#games-h">Line shopping</a>
+          <a href="#record-h">Track record</a>
+          <a href="#power-h">Rankings</a>
+          <a href="#how-h" class="key-link">How it works</a>
+      </nav>
+    </div>
+  </div>
 
   <main class="wrap" hidden>
+    <header class="hero">
+      <div class="eyebrow">College football game lines</div>
+      <h1>Every book.<br>Every game.</h1>
+      <p class="hero-sub">Spreads, totals, and moneylines for every FBS game, priced by a model that learns week to week and shopped across every sportsbook.</p>
+    </header>
     <p id="status" class="status" role="status">Loading college football games, scores, and lines…</p>
     <div id="sources" class="sources"></div>
 
@@ -72,7 +85,7 @@
         <h2 id="record-h">Track record</h2>
         <label class="inline">Season <select id="season"></select></label>
       </div>
-      <p class="muted">Each week's picks were made using only games played before that week, at the consensus closing line (-110 for spreads and totals), then the model learned from the results. Same settings as above.</p>
+      <p class="explain">Each week's picks were made using only games played before that week, at the consensus closing line (-110 for spreads and totals), then the model learned from the results. Same settings as above.</p>
       <div id="tiles" class="tiles"></div>
       <div id="chart" class="chart"></div>
       <div class="scroll"><table id="weekly" class="table"></table></div>
@@ -100,14 +113,22 @@
         <li><strong>Hard Rock Bet, FanDuel, BetMGM, theScore Bet (formerly ESPN BET), BetRivers, and Bovada</strong> (plus Caesars and Fanatics when they post college lines) through The Odds API, refreshed every 8 hours (Monday to Saturday) during the season to stay within the free plan.</li>
       </ul>
       <h3>How accurate is it?</h3>
-      <p id="accuracy" class="muted"></p>
+      <p id="accuracy" class="explain"></p>
       <p class="disclaimer">For education and entertainment. Closing college football lines are efficient, and no model reliably beats them. Check the track record before trusting any pick. Never bet more than you can afford to lose. Need help? Call 1-800-GAMBLER.</p>
     </section>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+  <footer class="site-footer">
+    <div>
+      <div>Picks and odds are for education and entertainment. Please bet responsibly. If you or someone you know has a gambling problem, call 1-800-GAMBLER.</div>
+      <div class="foot-row"><span>GridIron Edge CFB</span><span>Data from ESPN, cfbfastR, The Odds API, and DraftKings.</span></div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
   <script src="config.js"></script>
   <script src="model.js"></script>
+  <script src="season.js"></script>
   <script src="track.js"></script>
   <script src="app.js"></script>
   <script src="auth.js"></script>

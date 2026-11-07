@@ -4,44 +4,57 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>My Bets · GridIron Edge CFB</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Crect x=%2730%27 y=%2730%27 width=%2740%27 height=%2740%27 rx=%275%27 transform=%27rotate(45 50 50)%27 fill=%27none%27 stroke=%27%230b5fd6%27 stroke-width=%2710%27/%3E%3C/svg%3E">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="topbar">
-    <h1>GridIron Edge <span class="sub-brand">CFB</span></h1>
-    <p class="tagline">Every bet you've placed, settled automatically when results come in</p>
-    <nav class="site-nav" aria-label="Pages">
-      <a href="index.html">Game picks</a>
-      <a href="bets.html" aria-current="page">My bets</a>
-    </nav>
-    <nav class="nav" aria-label="On this page">
-      <a href="#sum-h">Summary</a>
-      <a href="#add-h">Add a bet</a>
-      <a href="#list-h">All bets</a>
-    </nav>
+    <div class="gnav">
+      <a class="brand" href="index.html"><span class="brand-mark"></span><span class="brand-name">GridIron Edge</span><span class="brand-sub">CFB</span></a>
+      <nav class="site-nav" aria-label="Pages">
+        <a href="index.html">Game lines</a>
+        <a href="props.html">Player props</a>
+        <a href="bets.html" aria-current="page">My bets</a>
+      </nav>
+    </div>
   </header>
+  <div class="lnav">
+    <div class="lnav-in">
+      <div class="lnav-title">My Bets</div>
+      <nav class="nav" aria-label="On this page">
+          <a href="#sum-h">Summary</a>
+          <a href="#add-h">Add a bet</a>
+          <a href="#list-h">All bets</a>
+      </nav>
+    </div>
+  </div>
 
   <main class="wrap" hidden>
+    <header class="hero">
+      <div class="eyebrow">My bets</div>
+      <h1>Every bet.<br>Settled.</h1>
+      <p class="hero-sub">Game bets, player props, and parlays you track, settled automatically from final scores and stat lines.</p>
+    </header>
     <p id="status" class="status" role="status">Loading your bets…</p>
 
     <section class="card" aria-labelledby="sum-h">
       <div class="row-head">
         <h2 id="sum-h">Summary</h2>
         <label class="inline">Show
-          <select id="f-kind"><option value="">All bets</option><option value="game">Game bets</option><option value="parlay">Parlays</option></select>
+          <select id="f-kind"><option value="">All bets</option><option value="game">Game bets</option><option value="prop">Player props</option><option value="parlay">Parlays</option></select>
         </label>
       </div>
       <div id="tiles" class="tiles"></div>
       <div id="chart" class="chart"></div>
-      <p class="explain">Profit counts settled bets only: a win pays your stake times the odds, a loss costs the stake, and pushes and voids return it. Bets tracked from the Game picks page settle themselves once ESPN posts the final score.</p>
+      <p class="explain">Profit counts settled bets only: a win pays your stake times the odds, a loss costs the stake, and pushes and voids return it. Bets tracked from the Game lines and Player props pages settle themselves once ESPN posts the final score or stat line.</p>
     </section>
 
     <section class="card" aria-labelledby="add-h">
       <h2 id="add-h">Add a bet</h2>
-      <p class="explain">For bets you placed on your own. The <strong>Track</strong> buttons on the Game picks page add any side at any sportsbook with the details filled in, and they settle automatically. For a parlay, use <strong>+ Parlay</strong> on any pick (or <strong>Add as parlay leg</strong> below), then open the <strong>Parlay slip</strong> at the bottom left.</p>
+      <p class="explain">For bets you placed on your own. The <strong>Track</strong> buttons on the Game lines and Player props pages add a bet with the details filled in, and they settle automatically. For a parlay, use <strong>+ Parlay</strong> on any pick (or <strong>Add as parlay leg</strong> below), then open the <strong>Parlay slip</strong> at the bottom left.</p>
       <form id="add" class="calc">
-        <label><span>Type</span><select id="a-kind"><option value="game">Game bet</option></select></label>
-        <label class="wide-field"><span>Bet</span><input id="a-desc" type="text" maxlength="200" required placeholder="e.g. Alabama -6.5 or Ohio State/Michigan under 44.5"></label>
+        <label><span>Type</span><select id="a-kind"><option value="game">Game bet</option><option value="prop">Player prop</option></select></label>
+        <label class="wide-field"><span>Bet</span><input id="a-desc" type="text" maxlength="200" required placeholder="e.g. Alabama -6.5, or a QB over 245.5 pass yds"></label>
         <label><span>Odds (American)</span><input id="a-odds" type="number" step="1" value="-110" required></label>
         <label><span>Stake ($)</span><input id="a-stake" type="number" min="0" step="1" value="10" required></label>
         <label><span>Date placed</span><input id="a-date" type="date" required></label>
@@ -65,8 +78,17 @@
     </section>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+  <footer class="site-footer">
+    <div>
+      <div>Picks and odds are for education and entertainment. Please bet responsibly. If you or someone you know has a gambling problem, call 1-800-GAMBLER.</div>
+      <div class="foot-row"><span>GridIron Edge CFB</span><span>Data from ESPN, cfbfastR, The Odds API, and DraftKings.</span></div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
   <script src="config.js"></script>
+  <script src="season.js"></script>
+  <script src="props-model.js"></script>
   <script src="track.js"></script>
   <script src="bets.js"></script>
   <script src="auth.js"></script>
