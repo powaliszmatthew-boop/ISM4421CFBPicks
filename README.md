@@ -39,7 +39,7 @@ Walk-forward check on 2025 and 2026 Weeks 1–9 (using cfbfastR play-by-play rol
 
 ## Ask the model (chatbot)
 
-Same chatbot as the NFL site, sharing its Supabase Edge Function `ask-model` (source in `supabase/functions/ask-model/`). The page sends `sport: "cfb"`, which gives the AI a college football prompt; every number still comes from this page's own model through `chat-tools.js`. Signed-in users only. The 30-questions-a-day limit, AI providers (Gemini, then Groq), keys in Vault, and usage logs (`chat_log`, `chat_usage_today`) are shared with the NFL site, so the daily limit counts questions on both sites together. The function accepts requests from `gridiron*.netlify.app` sites; if this site's Netlify name doesn't start with "gridiron", add it to `ALLOWED_ORIGIN` in `index.ts` and redeploy (`supabase functions deploy ask-model`).
+Same chatbot as the NFL site, sharing its Supabase Edge Function `ask-model` (source in `supabase/functions/ask-model/`). The page sends `sport: "cfb"`, which gives the AI a college football prompt; every number still comes from this page's own model through `chat-tools.js`. Signed-in users only. The 30-questions-a-day limit, AI providers (Gemini, then Groq), keys in Vault, and usage logs (`chat_log`, `chat_usage_today`) are shared with the NFL site, so the daily limit counts questions on both sites together. The function only accepts requests from the two sites (`cfbpicksplus.netlify.app` and `gridironedgenfl.netlify.app`, plus their deploy previews). If this site's Netlify address changes, add the new name to `ALLOWED_ORIGIN` in `index.ts` and redeploy (`supabase functions deploy ask-model`), or the chat shows "Couldn't reach the chat".
 
 ## The model
 

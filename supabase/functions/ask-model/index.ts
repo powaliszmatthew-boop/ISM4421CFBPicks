@@ -12,8 +12,8 @@ const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
   (() => { try { return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") || "{}").default; } catch { return ""; } })();
 const db = createClient(URL_, SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 
-// The NFL site, the college site (any gridiron*.netlify.app name), their deploy previews, and local servers.
-const ALLOWED_ORIGIN = /^(https:\/\/([a-z0-9-]+--)?gridiron[a-z0-9-]*\.netlify\.app|http:\/\/(localhost|127\.0\.0\.1)(:\d+)?)$/;
+// The NFL site (gridironedgenfl), the college site (cfbpicksplus), their deploy previews, and local servers.
+const ALLOWED_ORIGIN = /^(https:\/\/([a-z0-9-]+--)?(gridiron[a-z0-9-]*|cfbpicksplus)\.netlify\.app|http:\/\/(localhost|127\.0\.0\.1)(:\d+)?)$/;
 const MAX_QUESTION = 500, MAX_ANSWER_HISTORY = 900, MAX_RESULT = 6000, MAX_TOTAL_ROUNDS = 10;
 const BUSY = "Chat is busy right now. The free AI services it uses are at their limit, so please try again later. " +
   "You can still price any prop yourself with Price a prop.";
